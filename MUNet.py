@@ -347,11 +347,11 @@ class MUnet(nn.Module):
             
             self.layers['Up'+str(i)]=nn.MaxUnpool3d(PARAMS['PoolShape'])
             
-            self.layers['Dense_Up'+str(i)]=ConvBlock(PARAMS['FiltersNum'][i]+PARAMS['FiltersNum'][i+1],PARAMS['FiltersNum'][i-1],FilterSize=PARAMS['FilterSize'])
+            self.layers['Dense_Up'+str(i)]=ConvBlock(PARAMS['FiltersNum'][i]*2,PARAMS['FiltersNum'][i-1],FilterSize=PARAMS['FilterSize'])
             
             
         self.layers['Up'+str(0)]=nn.MaxUnpool3d(PARAMS['PoolShape'])
-        self.layers['Dense_Up'+str(0)]=ConvBlock(PARAMS['FiltersNum'][0]+PARAMS['FiltersNum'][1],PARAMS['ClassFilters'],FilterSize=PARAMS['FilterSize'])
+        self.layers['Dense_Up'+str(0)]=ConvBlock(PARAMS['FiltersNum'][0]*2,PARAMS['ClassFilters'],FilterSize=PARAMS['FilterSize'])
         
 
         self.layers['Classifier'] = nn.Conv3d(PARAMS['ClassFilters'],PARAMS['Categories'],1) #classifier layer
