@@ -11,60 +11,69 @@ import torch.nn as nn
 import numpy as np
 
 
-PARAMS_3D_NoSkip={    'Categories':5, #Multiple categories, separated from 1 category task
-            'FilterSize':int(5), #was 5
-            'FiltersNum':np.array([64, 64, 64, 64]), #number or tuple
-            'ClassFilters':int(64), #number of filters in the classifier block
-            'Depth':int(4),#number of dense blocks in each path # was 4
-            'Activation':nn.LeakyReLU,  #Activation function
-            'InblockSkip':False, #Use skip connections inside conv blocks
-            'ZBoundaries':False, #Look for region boudaries in the Z direction as well when calculating the loss function
-            'PoolShape':2 #Shape of the pooling operation
-            }
+PARAMS_3D_NoSkip={'Categories':5, #Multiple categories, separated from 1 category task
+                'FilterSize':int(5), #was 5
+                'FiltersNum':np.array([64, 64, 64, 64]), #number or tuple
+                'ClassFilters':int(64), #number of filters in the classifier block
+                'Depth':int(4),#number of dense blocks in each path # was 4
+                'Activation':nn.LeakyReLU,  #Activation function
+                'InblockSkip':False, #Use skip connections inside conv blocks
+                'ZBoundaries':False, #Look for region boudaries in the Z direction as well when calculating the loss function
+                'PoolShape':2 #Shape of the pooling operation
+                }
 
-PARAMS_3D_Skip={    'Categories':5, 
-            'FilterSize':int(5), 
-            'FiltersNum':np.array([64, 64, 64, 64]), 
-            'ClassFilters':int(64),
-            'Depth':int(4),
-            'Activation':nn.LeakyReLU, 
-            'InblockSkip':True,
-            'ZBoundaries':False,
-            'PoolShape':2
-            }
+PARAMS_3D_Skip={'Categories':5, 
+                'FilterSize':int(5), 
+                'FiltersNum':np.array([64, 64, 64, 64]), 
+                'ClassFilters':int(64),
+                'Depth':int(4),
+                'Activation':nn.LeakyReLU, 
+                'InblockSkip':True,
+                'ZBoundaries':False,
+                'PoolShape':2
+                }
 
-PARAMS_2D_Skip={    'Categories':5, 
-            'FilterSize':(5,5,1), 
-            'FiltersNum':np.array([64, 64, 64, 64]),
-            'ClassFilters':int(64), 
-            'Depth':int(4),#n
-            'Activation':nn.LeakyReLU, 
-            'InblockSkip':True, 
-            'ZBoundaries':False, 
-            'PoolShape':(2,2,1) #
-            }
+PARAMS_2D_Skip={'Categories':5, 
+                'FilterSize':(5,5,1), 
+                'FiltersNum':np.array([64, 64, 64, 64]),
+                'ClassFilters':int(64), 
+                'Depth':int(4),#n
+                'Activation':nn.LeakyReLU, 
+                'InblockSkip':True, 
+                'ZBoundaries':False, 
+                'PoolShape':(2,2,1) #
+                }
 
-PARAMS_2D_NoSkip={    'Categories':5,
-            'FilterSize':(5,5,1),
-            'FiltersNum':np.array([64, 64, 64, 64]),
-            'ClassFilters':int(64),
-            'Depth':int(4),
-            'Activation':nn.LeakyReLU,
-            'InblockSkip':False,
-            'ZBoundaries':False,
-            'PoolShape':(2,2,1)
-            }
+PARAMS_2D_NoSkip={'Categories':5,
+                'FilterSize':(5,5,1),
+                'FiltersNum':np.array([64, 64, 64, 64]),
+                'ClassFilters':int(64),
+                'Depth':int(4),
+                'Activation':nn.LeakyReLU,
+                'InblockSkip':False,
+                'ZBoundaries':False,
+                'PoolShape':(2,2,1)
+                }
 
-PARAMS_3D_Skip_2DPOOL={    'Categories':5,
-            'FilterSize':int(5),
-            'FiltersNum':np.array([64, 64, 64, 64]),
-            'ClassFilters':int(64),
-            'Depth':int(4),
-            'Activation':nn.LeakyReLU,
-            'InblockSkip':True,
-            'ZBoundaries':False,
-            'PoolShape':(2,2,1)}
+PARAMS_3D_Skip_2DPOOL={'Categories':5,
+                'FilterSize':int(5),
+                'FiltersNum':np.array([64, 64, 64, 64]),
+                'ClassFilters':int(64),
+                'Depth':int(4),
+                'Activation':nn.LeakyReLU,
+                'InblockSkip':True,
+                'ZBoundaries':False,
+                'PoolShape':(2,2,1)}
 
+PARAMS_SKULLNET={'Categories':0,
+                'FilterSize':(5,5,1),
+                'FiltersNum':np.array([4, 8, 16, 32]),
+                'ClassFilters':int(4),
+                'Depth':int(4),
+                'Activation':nn.LeakyReLU,
+                'InblockSkip':False,
+                'ZBoundaries':False,
+                'PoolShape':(2,2,1)}
 PARAMS=PARAMS_2D_NoSkip
             
 EPS=1e-10 # log offset to avoid log(0)
@@ -313,6 +322,75 @@ class Loss():
         
         return MonoLoss(Mask,PredMask,self.W0*Wm,self.W1*Wm) + CateLoss(Labels,LabelsPred,self.W0*Wl,self.W1*Wl,self.categories)
 
+
+class SkullNet(nn.Module):
+    
+    def __init__(self,PARAMS=PARAMS_SKULLNET):
+        super(SkullNet,self).__init__()
+        self.PARAMS=PARAMS
+        if PARAMS['InblockSkip']:
+            ConvBlock=SkipConvBlock
+            self.skipper=True
+        else:
+            ConvBlock=NoSkipConvBlock
+            self.skipper=False
+        self.layers=nn.ModuleDict()
+        self.layers['Dense_Down'+str(0)]=ConvBlock(1,PARAMS['FiltersNum'][0],FilterSize=PARAMS['FilterSize'])
+        self.layers['Pool'+str(0)]=nn.MaxPool3d(PARAMS['PoolShape'],return_indices=True) 
+        
+        for i in range(1,PARAMS['Depth']):
+            self.layers['Dense_Down'+str(i)]=ConvBlock(PARAMS['FiltersNum'][i-1],PARAMS['FiltersNum'][i],FilterSize=PARAMS['FilterSize'])
+            self.layers['Pool'+str(i)]=nn.MaxPool3d(PARAMS['PoolShape'],return_indices=True) 
+        
+        self.layers['Bneck']=Bottleneck(PARAMS['FiltersNum'][-1],PARAMS['FiltersNum'][-1],FilterSize=PARAMS['FilterSize'])
+        
+        self.layers['Up'+str(i)]=nn.MaxUnpool3d(PARAMS['PoolShape'])
+        self.layers['Dense_Up'+str(i)]=ConvBlock(PARAMS['FiltersNum'][-1]+PARAMS['FiltersNum'][-1],PARAMS['FiltersNum'][-2],FilterSize=PARAMS['FilterSize'])
+        
+        for i in reversed(range(1,PARAMS['Depth']-1)):
+            
+            self.layers['Up'+str(i)]=nn.MaxUnpool3d(PARAMS['PoolShape'])
+            
+            self.layers['Dense_Up'+str(i)]=ConvBlock(PARAMS['FiltersNum'][i]+PARAMS['FiltersNum'][i],PARAMS['FiltersNum'][i-1],FilterSize=PARAMS['FilterSize'])
+            
+            
+        self.layers['Up'+str(0)]=nn.MaxUnpool3d(PARAMS['PoolShape'])
+        self.layers['Dense_Up'+str(0)]=ConvBlock(PARAMS['FiltersNum'][0]+PARAMS['FiltersNum'][0],PARAMS['ClassFilters'],FilterSize=PARAMS['FilterSize'])
+        
+        self.layers['BinaryMask'] = nn.Conv3d(PARAMS['ClassFilters'],1,1) #binary mask classifier
+        self.sigmoid=nn.Sigmoid()
+            
+            
+    def forward(self,MRI):
+        pools={}
+        dense={}
+        dense[0] = self.layers['Dense_Down'+str(0)](MRI)
+        dense[1], pools[0] = self.layers['Pool'+str(0)](dense[0])
+        
+        for i in range(1,self.PARAMS['Depth']):
+            dense[i] = self.layers['Dense_Down'+str(i)](dense[i])
+            dense[i+1], pools[i] = self.layers['Pool'+str(i)](dense[i])
+        
+        BotNeck = self.layers['Bneck'](dense[i+1])
+        
+        Updense={}
+        Unpool={}
+        
+        Unpool[i] = self.layers['Up'+str(i)](BotNeck,pools[i],output_size=dense[i].size())
+        cat=torch.cat([Unpool[i],dense[i]],dim=1)
+        Updense[i] = self.layers['Dense_Up'+str(i)](cat)
+        
+        for i in reversed(range(self.PARAMS['Depth']-1)):
+            
+            Unpool[i]=self.layers['Up'+str(i)](Updense[i+1],pools[i],output_size=dense[i].size())
+            cat=torch.cat([Unpool[i],dense[i]],dim=1)
+            Updense[i]=self.layers['Dense_Up'+str(i)](cat)
+        
+        MonoClass=self.layers['BinaryMask'](Updense[0])
+        
+        Mask=self.sigmoid(MonoClass)
+        
+        return Mask 
 
 class MUnet(nn.Module):
     """

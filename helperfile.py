@@ -10,14 +10,26 @@ import numpy as np
 from torch.utils.data import Dataset
 import torch, torchvision
 import os
+from skimage.measure import label as SkLabel
 
 DEFopt={'--outputtype':'atlas',
-     '--overwrite':'False',
-     '--N3':'False',
-     '--multinet':'False',
-     '--probmap':'False'}
+        '--overwrite':'False',
+        '--N3':'False',
+        '--multinet':'False',
+        '--probmap':'False',
+        '--boundingbox':'True',
+        '--useGPU':'True'}
 
 labs=('Cortex','Hippocampus','Ventricles','Striatum','Background')
+
+def Booler(opt,string):
+    if opt[string]=='False':
+        opt[string]=False
+    elif opt[string]=='True':
+        opt[string]=True
+    else:
+        raise NameError('Value '+opt[string]+' unrecognized for option '+string)
+    return opt
 
 def GetFilesOptions(args,opt=DEFopt):
     VolumeList=[]
@@ -37,42 +49,32 @@ def GetFilesOptions(args,opt=DEFopt):
                 raise NameError('Option '+k+' not recognized')
         
         VolumeList.append(k)
-    
-    
-    if opt['--overwrite']=='False':
-        opt['--overwrite']=False
-    elif opt['--overwrite']=='True':
-        opt['--overwrite']=True
-    else:
-        raise NameError('Value '+opt['--overwrite']+' unrecognized for option --overwrite')
-    
-    if opt['--probmap']=='False':
-        opt['--probmap']=False
-    elif opt['--probmap']=='True':
-        opt['--probmap']=True
-    else:
-        raise NameError('Value '+opt['--probmap']+' unrecognized for option --probmap')
-        
-    if opt['--N3']=='False':
-        opt['--N3']=False
-    elif opt['--N3']=='True':
-        opt['--N3']=True
-    else:
-        raise NameError('Value '+opt['--N3']+' unrecognized for option --N3')
+    opt=Booler(opt,'--boundingbox')
+    opt=Booler(opt,'--overwrite')
+    opt=Booler(opt,'--probmap')
+    opt=Booler(opt,'--N3')
+    opt=Booler(opt,'--multinet')
+    opt=Booler(opt,'--useGPU')
     
     if opt['--outputtype'] not in ('atlas','4D','separate'):
         raise NameError('Value '+opt['--outputtype']+' unrecognized for option --outputtype')
         
-    if opt['--multinet']=='False':
-        opt['--multinet']=False
-    elif opt['--multinet']=='True':
-        opt['--multinet']=True
-    else:
-        raise NameError('Value '+opt['--multinet']+' unrecognized for option --multinet')
-        
     return VolumeList, opt
 
+padwith={0:0,
+         1:0,
+         2:0,
+         3:0,
+         4:1}
 
+def LargestComponent(Mask):
+    Divs=SkLabel(Mask)
+    counts=np.zeros(np.max(Divs))
+    for i in range(len(counts)):
+        counts[i]=np.sum(Mask[Divs==(i+1)])
+    ind=np.argmax(counts)+1
+    Mask[Divs!=ind]=0
+    return Mask
 
 def SaveNii(reference,volume,out_path,overwrite=False):
     if os.path.exists(out_path) and (not overwrite):
@@ -85,7 +87,7 @@ def SaveNii(reference,volume,out_path,overwrite=False):
     newnii.header['qoffset_z']=ref.header['qoffset_z']
     nib.save(newnii,out_path)
 
-def SaveVolume(path,output,opt):
+def SaveVolume(path,output,opt,pad=(0,0)):
     Mask=output[0].detach().cpu().numpy()
     S=Mask.shape
     Mask=Mask.reshape((S[-3],S[-2],S[-1]))
@@ -99,11 +101,11 @@ def SaveVolume(path,output,opt):
         Labels[np.where(Labels== np.amax(Labels,axis=1))] = 1
         Labels[Labels!=1]=0
     
-
+    Mask=np.pad(Mask,pad)
     SaveNii(path,Mask,out+'_Mask.nii.gz',opt['--overwrite'])
     for i in range(5):
         vol=np.zeros(Mask.shape)
-        vol+=Labels[0,i,:,:,:]
+        vol+=np.pad(Labels[0,i,:,:,:],pad,'constant', constant_values=(padwith[i]))
         SaveNii(path,vol,out+'_'+labs[i]+'.nii.gz',opt['--overwrite'])
             
         
@@ -120,18 +122,41 @@ class Normalizer():
     
 class ToTensor():
     
+    def __init__(self,opt={'--useGPU':True}):
+        self.cuda=opt['--useGPU']
+    
     def __call__(self,sample):
         MRIT = torch.from_numpy(sample['MRI'])
-        MRIT=MRIT.float().cuda()
-        
-        return {'MRI': MRIT}
+        if self.cuda:
+            MRIT=MRIT.float().cuda()
+        else:
+            MRIT=MRIT.float().cpu()
+        sample['MRI']=MRIT
+        return sample
+
+def XYBox(Mask,offset=1):
+    S=Mask.shape
+    LowX=0
+    while np.sum(Mask[LowX,:,:])==0:
+        LowX+=offset
     
-normalizator = Normalizer()
-tensorize = ToTensor()
-transforms = torchvision.transforms.Compose([ normalizator, tensorize])
+    LowY=0
+    while np.sum(Mask[:,LowY,:])==0:
+        LowY+=offset
+    
+    
+    HighX=S[0]-1
+    while np.sum(Mask[HighX,:,:])==0:
+        HighX-=offset
+    
+    HighY=S[1]-1
+    while np.sum(Mask[:,HighY,:])==0:
+        HighY-=offset
+        
+    return LowX, HighX, LowY, HighY
         
 class SegmentUs(Dataset):
-    def __init__(self, VolumeList,transform=transforms):
+    def __init__(self, VolumeList,boxtemplates=None,transform=None):
         """
         Turns the volume list in a torch dataset to infer through
         Just give it the volume list
@@ -139,6 +164,7 @@ class SegmentUs(Dataset):
         self.dataset=[]
         self.paths=[]
         self.transform=transform
+        self.boxtemplates=boxtemplates
         for vol in VolumeList:
             if not os.path.isfile(vol):
                 raise NameError (vol+' file does not exist')
@@ -155,13 +181,22 @@ class SegmentUs(Dataset):
         
         
         sample = {'MRI': MRI}
-        
+        # Crop
+        if self.boxtemplates!=None:
+            
+            LowX, HighX, LowY, HighY = XYBox(self.boxtemplates[idx])
+            HighX, HighY = HighX + 1, HighY + 1
+            
+            sample['MRI']= sample['MRI'][:,LowX:HighX,LowY:HighY,:]
+            offsets=((int(LowX), int(S[0]-HighX)),(int(LowY), int(S[1]-HighY)),(0,0))  #(0,0, int(LowY), int(S[1]-HighY), int(LowX), int(S[0]-HighX)) # (0,0, int(S[1]-HighY), int(LowY), int(S[0]-HighX), int(LowX))
         # Transform
         
         if self.transform:
             sample = self.transform(sample)
         
         sample['path']=self.paths[idx]
+        if self.boxtemplates!=None: 
+            sample['offsets']=np.array(offsets)
         return sample
         
     def __len__(self):
