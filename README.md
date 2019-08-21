@@ -32,7 +32,7 @@ Options:
 
 --useGPU [True/False]: run on GPU, requires a CUDA enabled GPU and PyTorch installed with GPU support
 
-Note: we assume the first two indices in the volume are contained in the same coronal section, so that the third index would refer to different coronal sections
+Mask volumes are generated in the same folder as the segmented files.
 
 Example: 
 
