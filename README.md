@@ -17,14 +17,20 @@ This network is trained on coronal T2 mouse brain MRI delineated with a bounding
 python3 runMU-Net.py [options] [list of volumes]
 
 [list of volumes] is a list of paths to nifti volumes separated by spaces
+
 Options:
---overwrite [True/False]:
-    Overwrite outputs if file already exists (default: False)
---N3 [True/False]:
-    Load model weights for N3 corrected volumes (default False)
+
+--overwrite [True/False]: Overwrite outputs if file already exists (default: False)
+    
+--N3 [True/False]: Load model weights for N3 corrected volumes (default False)
+    
 --multinet [True/False]: use networks trained on all folds and apply majority voting. (default True)
+
 --probmap [True/False]: output unthresholded probability maps rather than the segmented volumes (default False)
+
 --boundingbox [True/False]: automatically estimate bounding box using auxiliary network (default True)
+
 --useGPU [True/False]: run on GPU, requires a CUDA enabled GPU and PyTorch installed with GPU support
+
 Note: we assume the first two indices in the volume are contained in the same coronal section, so that the third index would refer to different coronal sections
 
