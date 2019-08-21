@@ -34,3 +34,7 @@ Options:
 
 Note: we assume the first two indices in the volume are contained in the same coronal section, so that the third index would refer to different coronal sections
 
+Example: 
+
+python3 runMU-Net.py --overwrite True my/favourite/mouse.nii my/other/one.nii
+
