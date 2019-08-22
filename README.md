@@ -40,6 +40,9 @@ python3 runMU-Net.py --overwrite True my/favourite/mouse.nii my/other/one.nii
 
 # Acknowledgments
 
-R.D.F.'s work has received funding from the European Union's Horizon 2020 Framework Programme under the Marie Skłodowska Curie grant agreement No #691110 (MICROBRADAM) and J.M.V.' work was founded from Marie Skłodowska Curie grant agreement No #740264 (GENOMMED). The content is solely the responsibility of the authors and does not necessarily represent the official views of the European commission.
+R.D.F.'s work has received funding from the European Union's Horizon 2020 Framework Programme under the Marie Skłodowska Curie grant agreement No #691110 (MICROBRADAM) and J.M.V.' work was founded from Marie Skłodowska Curie grant agreement No #740264 (GENOMMED). 
+
+The content is solely the responsibility of the authors and does not necessarily represent the official views of the European commission.
+
 We also extend our thanks to the Academy of Finland, grants (#275453 to A.S. and #298007 to O.G.).
 
