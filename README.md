@@ -30,7 +30,7 @@ Options:
 
 --boundingbox [True/False]: automatically estimate bounding box using auxiliary network (default True)
 
---useGPU [True/False]: run on GPU, requires a CUDA enabled GPU and PyTorch installed with GPU support
+--useGPU [True/False]: run on GPU, requires a CUDA enabled GPU and PyTorch installed with GPU support (default True)
 
 Mask volumes are generated in the same folder as the segmented files.
 
