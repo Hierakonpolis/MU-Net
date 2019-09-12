@@ -15,7 +15,7 @@ from skimage.measure import label as SkLabel
 DEFopt={'--outputtype':'atlas',
         '--overwrite':'False',
         '--N3':'False',
-        '--multinet':'False',
+        '--multinet':'True',
         '--probmap':'False',
         '--boundingbox':'True',
         '--useGPU':'True'}
@@ -23,9 +23,9 @@ DEFopt={'--outputtype':'atlas',
 labs=('Cortex','Hippocampus','Ventricles','Striatum','Background')
 
 def Booler(opt,string):
-    if opt[string]=='False':
+    if opt[string].upper()=='FALSE':
         opt[string]=False
-    elif opt[string]=='True':
+    elif opt[string].upper()=='TRUE':
         opt[string]=True
     else:
         raise NameError('Value '+opt[string]+' unrecognized for option '+string)

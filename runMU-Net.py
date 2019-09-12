@@ -19,7 +19,7 @@ if len(sys.argv)==1: # Helper message
           '--multinet [True/False]: use networks trained on all folds and apply majority voting. (default True)\n'+
           '--probmap [True/False]: output unthresholded probability maps rather than the segmented volumes (default False)\n'+
           '--boundingbox [True/False]: automatically estimate bounding box using auxiliary network (default True)\n'+
-          '--useGPU [True/False]: run on GPU, requires installed GPU support for pytorch with a CUDA enabled GPU\n'+
+          '--useGPU [True/False]: run on GPU, requires installed GPU support for pytorch with a CUDA enabled GPU (default True)\n'+
           'Note: we assume the first two indices in the volume are contained in the same coronal section, so that the third index would refer to different coronal sections')
     exit()
 import helperfile, torch, tqdm
@@ -41,7 +41,7 @@ pads=[]
 
 
 
-#print(sys.argv)
+print(sys.argv)
 #This will modify paths based on using N3 bias corrected volumes or not
 if opt['--N3']:
     N3='_N3'
@@ -82,10 +82,11 @@ if opt['--boundingbox']:
         tempo[tempo>=0.5]=1
         tempo[tempo!=1]=0
         boxtemplates.append(helperfile.LargestComponent(helperfile.np.copy(tempo)))
-    else:
-        boxtemplates=None
+else:
+    boxtemplates=None
 del masks
 
+print('Segmenting...')
 #final dataloader
 SegmentList=helperfile.SegmentUs(VolumeList,boxtemplates=boxtemplates,transform=transforms)
 SegmentLoader = torch.utils.data.DataLoader(SegmentList, batch_size=1, shuffle=False)
