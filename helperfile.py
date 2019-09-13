@@ -97,15 +97,18 @@ def SaveVolume(path,output,opt,pad=(0,0)):
     if not opt['--probmap']:
         Mask[Mask>=0.5]=1
         Mask[Mask<1]=0
+        Mask=LargestComponent(Mask)
         
-        Labels[np.where(Labels== np.amax(Labels,axis=1))] = 1
+        Labels[np.where(Labels == np.amax(Labels,axis=1))] = 1
         Labels[Labels!=1]=0
+        Labels=Labels*Mask
     
     Mask=np.pad(Mask,pad)
     SaveNii(path,Mask,out+'_Mask.nii.gz',opt['--overwrite'])
     for i in range(5):
         vol=np.zeros(Mask.shape)
         vol+=np.pad(Labels[0,i,:,:,:],pad,'constant', constant_values=(padwith[i]))
+        if (not opt['--probmap']) and (labs[i]!=labs[-1]): vol=vol*Mask
         SaveNii(path,vol,out+'_'+labs[i]+'.nii.gz',opt['--overwrite'])
             
         
