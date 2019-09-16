@@ -9,9 +9,9 @@ runMU-Net.py : script to run segmentation on nifti MRI volumes
 
 helperfile: Auxiliary functions for runMU-Net.py
 
-weights: trained network parameters for each dataset fold
+weights, AuxW: trained network parameters for each dataset fold
 
-weights_N3: network parameters when trained on N3-corrected MRI volumes
+weights_N3, AuxW_N3: network parameters when trained on N3-corrected MRI volumes
 
 Developed in PyTorch 1.0.1, the included script also requires nibabel, skimage and tqdm. 
 
