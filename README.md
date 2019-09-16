@@ -14,17 +14,29 @@ This network is trained on coronal T2 mouse brain MRI delineated with a bounding
 ## Installation:
 It is recommended to create a virtual environment. You can use `virtualenv` or [Anaconda](https://www.anaconda.com/). For this guide we will assume you are using the latter running in a linux environment. You can download anaconda for your system [here](https://www.anaconda.com/distribution/).
 
-0. Creating a new environment: `conda create --name MyEnv`
+0. Creating a new environment: 
+
+    `conda create --name MyEnv`
     
-1. Activate it: `conda activate MyEnv`
+1. Activate it: 
 
-2. Install PyTorch. Visit https://pytorch.org/get-started/locally/ and select your OS, package manager and CUDA version. Run the suggested line in your conda environment. It should look like this: `conda install pytorch torchvision cudatoolkit=10.0 -c pytorch`
+    `conda activate MyEnv`
 
-3. Install other required packages: `conda install tqdm numpy`
+2. Install PyTorch. Visit https://pytorch.org/get-started/locally/ and select your OS, package manager and CUDA version. Run the suggested line in your conda environment. It should look like this: 
 
-4. These packages are available from a different channel: `conda install -c conda-forge scikit-image nibabel`
+    `conda install pytorch torchvision cudatoolkit=10.0 -c pytorch`
 
-5. Clone this repository: `git clone https://github.com/Hierakonpolis/MU-Net`
+3. Install other required packages: 
+
+    `conda install tqdm numpy`
+
+4. These packages are available from a different channel: 
+
+    `conda install -c conda-forge scikit-image nibabel`
+
+5. Clone this repository: 
+
+    `git clone https://github.com/Hierakonpolis/MU-Net`
 
 ## Usage:
 python3 runMU-Net.py [options] [list of volumes]
