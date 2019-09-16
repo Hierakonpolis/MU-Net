@@ -11,7 +11,7 @@ weights_N3: network parameters when trained on N3-corrected MRI volumes
 Developed in PyTorch 1.0.1, the included script also requires nibabel, skimage and tqdm. 
 
 This network is trained on coronal T2 mouse brain MRI delineated with a bounding box, and so for the network to function correctly MRI volumes need to be cropped to a bounding box around the brain. To automate this task we include a lightweight auxiliary network. You can exclude this step by using the "--boundingbox False" option.
-# Installation:
+## Installation:
 It is recommended to create a virtual environment. You can use `virtualenv` or [Anaconda](https://www.anaconda.com/). For this guide we will assume you are using the latter running in a linux environment. You can download anaconda for your system [here](https://www.anaconda.com/distribution/).
 
 0. Creating a new environment: `conda create --name MyEnv`
@@ -26,7 +26,7 @@ It is recommended to create a virtual environment. You can use `virtualenv` or [
 
 5. Clone this repository: `git clone https://github.com/Hierakonpolis/MU-Net`
 
-# Usage:
+## Usage:
 python3 runMU-Net.py [options] [list of volumes]
 
 [list of volumes] is a list of paths to nifti volumes separated by spaces
@@ -51,7 +51,7 @@ Example:
 
 python3 runMU-Net.py --overwrite True my/favourite/mouse.nii my/other/one.nii
 
-# Acknowledgments
+## Acknowledgments
 
 R.D.F.'s work has received funding from the European Union's Horizon 2020 Framework Programme under the Marie Skłodowska Curie grant agreement No #691110 (MICROBRADAM) and J.M.V.' work was founded from Marie Skłodowska Curie grant agreement No #740264 (GENOMMED). 
 
