@@ -12,7 +12,7 @@ Developed in PyTorch 1.0.1, the included script also requires nibabel, skimage a
 
 This network is trained on coronal T2 mouse brain MRI delineated with a bounding box, and so for the network to function correctly MRI volumes need to be cropped to a bounding box around the brain. To automate this task we include a lightweight auxiliary network. You can exclude this step by using the "--boundingbox False" option.
 ## Installation:
-It is recommended to create a virtual environment. You can use `virtualenv` or [Anaconda](https://www.anaconda.com/). For this guide we will assume you are using the latter running in a linux environment. You can download anaconda for your system [here](https://www.anaconda.com/distribution/).
+It is recommended to create a virtual environment. For this guide we will assume you are using the [Anaconda](https://www.anaconda.com/) data science platform. You can download Anaconda for your system [here](https://www.anaconda.com/distribution/).
 
 0. Creating a new environment: 
 
@@ -37,6 +37,8 @@ It is recommended to create a virtual environment. You can use `virtualenv` or [
 5. Clone this repository: 
 
     `git clone https://github.com/Hierakonpolis/MU-Net`
+    
+We're good to go.
 
 ## Usage:
 python3 runMU-Net.py [options] [list of volumes]
