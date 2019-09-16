@@ -12,29 +12,19 @@ Developed in PyTorch 1.0.1, the included script also requires nibabel, skimage a
 
 This network is trained on coronal T2 mouse brain MRI delineated with a bounding box, and so for the network to function correctly MRI volumes need to be cropped to a bounding box around the brain. To automate this task we include a lightweight auxiliary network. You can exclude this step by using the "--boundingbox False" option.
 # Installation:
-0. It is recommended to create a virtual environment. You can use `virtualenv` or [Anaconda](https://www.anaconda.com/). For this guide we will assume you are using the latter running in a linux environment. You can download anaconda for your system [here](https://www.anaconda.com/distribution/).
+It is recommended to create a virtual environment. You can use `virtualenv` or [Anaconda](https://www.anaconda.com/). For this guide we will assume you are using the latter running in a linux environment. You can download anaconda for your system [here](https://www.anaconda.com/distribution/).
 
-`conda create --name MyEnv`
+0. Creating a new environment: `conda create --name MyEnv`
     
-1. Activate your environment
+1. Activate it: `conda activate MyEnv`
 
-`conda activate MyEnv`
+2. Install PyTorch. Visit https://pytorch.org/get-started/locally/ and select your OS, package manager and CUDA version. Run the suggested line in your conda environment. It should look like this: `conda install pytorch torchvision cudatoolkit=10.0 -c pytorch`
 
-2. Install PyTorch. Visit https://pytorch.org/get-started/locally/ and select your OS, package manager and CUDA version. Run the suggested line in your conda environment. It should look like this:
+3. Install other required packages: `conda install tqdm numpy`
 
-`conda install pytorch torchvision cudatoolkit=10.0 -c pytorch`
+4. These packages are available from a different channel: `conda install -c conda-forge scikit-image nibabel`
 
-3. Install the other required packages:
-
-`conda install tqdm numpy`
-
-`conda install -c conda-forge scikit-image nibabel`
-
-4. Clone this repository: 
-
-`git clone https://github.com/Hierakonpolis/MU-Net`
-
-Or use the download button.
+5. Clone this repository: `git clone https://github.com/Hierakonpolis/MU-Net`
 
 # Usage:
 python3 runMU-Net.py [options] [list of volumes]
