@@ -37,8 +37,6 @@ It is recommended to create a virtual environment. For this guide we will assume
 5. Clone this repository: 
 
     `git clone https://github.com/Hierakonpolis/MU-Net`
-    
-We're good to go.
 
 ## Usage:
 python3 runMU-Net.py [options] [list of volumes]
