@@ -27,7 +27,7 @@ It is recommended to create a virtual environment. For this guide we will assume
 
     `conda activate MyEnv`
 
-2. Install PyTorch. Visit https://pytorch.org/get-started/locally/ and select your OS, package manager and CUDA version. Run the suggested line in your conda environment. It should look like this: 
+2. Install PyTorch. Visit https://pytorch.org/get-started/locally/ and select your OS, package manager and CUDA version. Input the suggested line in your conda environment. It should look like this: 
 
     `conda install pytorch torchvision cudatoolkit=10.0 -c pytorch`
 
@@ -37,7 +37,7 @@ It is recommended to create a virtual environment. For this guide we will assume
 
 4. These packages are available from a different channel: 
 
-    `conda install -c conda-forge scikit-image nibabel`
+    `conda install -c conda-forge scikit-image nibabel scipy`
 
 5. Clone this repository: 
 
@@ -47,6 +47,8 @@ It is recommended to create a virtual environment. For this guide we will assume
 python3 runMU-Net.py [options] [list of volumes]
 
 [list of volumes] is a list of paths to nifti volumes separated by spaces
+
+If a folder path is specified, all .nii and .ni.gz files will be added recursvely
 
 Options:
 

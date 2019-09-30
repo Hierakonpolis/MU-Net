@@ -12,6 +12,7 @@ if len(sys.argv)==1: # Helper message
           'This network is optimized to run on 2D coronal slices.\nHow to run:\n\n'+
           'python3 runMU-Net.py [options] [list of volumes]\n\n'+
           '[list of volumes] is a list of paths to nifti volumes separated by spaces\n'+
+          'If a folder path is specified, all .nii and .ni.gz files will be added recursvely\n'+
           'Options:'+
           '\n--overwrite [True/False]:\n'+
           '    Overwrite outputs if file already exists (default: False)\n'+

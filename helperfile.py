@@ -9,6 +9,7 @@ import nibabel as nib
 import numpy as np
 from torch.utils.data import Dataset
 import torch, torchvision
+from scipy.ndimage.morphology import binary_fill_holes
 import os
 from skimage.measure import label as SkLabel
 
@@ -31,6 +32,13 @@ def Booler(opt,string):
         raise NameError('Value '+opt[string]+' unrecognized for option '+string)
     return opt
 
+def FillHoles(vol):
+    S=vol.shape
+    newvol=np.zeros_like(vol)
+    for k in range(S[2]):
+        newvol[:,:,k]=binary_fill_holes(vol[:,:,k])
+    return newvol
+
 def GetFilesOptions(args,opt=DEFopt):
     VolumeList=[]
     optchange=''
@@ -48,7 +56,15 @@ def GetFilesOptions(args,opt=DEFopt):
             else:
                 raise NameError('Option '+k+' not recognized')
         
-        VolumeList.append(k)
+        if os.path.isfile(k):
+            VolumeList.append(k)
+        elif os.path.isdir(k):
+            for subdir, _, files in os.walk(k):
+                for file in files:
+                    if file.endswith('nii') or file.endswith('nii.gz'):
+                        VolumeList.append(os.path.join(subdir,file))
+        else:
+            raise NameError('File or directory '+k+' not found')
     opt=Booler(opt,'--boundingbox')
     opt=Booler(opt,'--overwrite')
     opt=Booler(opt,'--probmap')
@@ -98,6 +114,7 @@ def SaveVolume(path,output,opt,pad=(0,0)):
         Mask[Mask>=0.5]=1
         Mask[Mask<1]=0
         Mask=LargestComponent(Mask)
+        Mask=FillHoles(Mask)
         
         Labels[np.where(Labels == np.amax(Labels,axis=1))] = 1
         Labels[Labels!=1]=0
@@ -107,7 +124,7 @@ def SaveVolume(path,output,opt,pad=(0,0)):
     SaveNii(path,Mask,out+'_Mask.nii.gz',opt['--overwrite'])
     for i in range(5):
         vol=np.zeros(Mask.shape)
-        vol+=np.pad(Labels[0,i,:,:,:],pad,'constant', constant_values=(padwith[i]))
+        vol+=np.pad(FillHoles(Labels[0,i,:,:,:]),pad,'constant', constant_values=(padwith[i]))
         if (not opt['--probmap']) and (labs[i]!=labs[-1]): vol=vol*Mask
         SaveNii(path,vol,out+'_'+labs[i]+'.nii.gz',opt['--overwrite'])
             
