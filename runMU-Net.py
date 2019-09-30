@@ -23,8 +23,10 @@ if len(sys.argv)==1: # Helper message
           '--useGPU [True/False]: run on GPU, requires installed GPU support for pytorch with a CUDA enabled GPU (default True)\n'+
           'Note: we assume the first two indices in the volume are contained in the same coronal section, so that the third index would refer to different coronal sections')
     exit()
-import helperfile, torch, tqdm
+import helperfile, tqdm
 import MUNet
+
+torch=helperfile.torch
 
 #Extract options and MRI volumes list
 VolumeList, opt = helperfile.GetFilesOptions(sys.argv[1:])
