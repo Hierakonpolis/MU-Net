@@ -8,22 +8,24 @@ Created on Wed Jul 31 16:26:50 2019
 import nibabel as nib
 import numpy as np
 from torch.utils.data import Dataset
-import torch, torchvision
+import torch, torchvision, os, MUNet, tqdm, warnings
 from scipy.ndimage.morphology import binary_fill_holes
-import os
 from skimage.measure import label as SkLabel
+#import matplotlib.pyplot as plt
 
-DEFopt={'--outputtype':'atlas',
-        '--overwrite':'False',
+DEFopt={'--overwrite':'False',
         '--N3':'False',
         '--multinet':'True',
         '--probmap':'False',
         '--boundingbox':'True',
-        '--useGPU':'True'}
+        '--useGPU':'True',
+        '--namemask':'',
+        '--nameignore':''}
 
 labs=('Cortex','Hippocampus','Ventricles','Striatum','Background')
 
 def Booler(opt,string):
+    if type(opt[string]) == bool: return opt
     if opt[string].upper()=='FALSE':
         opt[string]=False
     elif opt[string].upper()=='TRUE':
@@ -39,7 +41,7 @@ def FillHoles(vol):
         newvol[:,:,k]=binary_fill_holes(vol[:,:,k])
     return newvol
 
-def GetFilesOptions(args,opt=DEFopt):
+def GetFilesOptions(args=[],opt=DEFopt):
     VolumeList=[]
     optchange=''
     
@@ -71,9 +73,6 @@ def GetFilesOptions(args,opt=DEFopt):
     opt=Booler(opt,'--N3')
     opt=Booler(opt,'--multinet')
     opt=Booler(opt,'--useGPU')
-    
-    if opt['--outputtype'] not in ('atlas','4D','separate'):
-        raise NameError('Value '+opt['--outputtype']+' unrecognized for option --outputtype')
         
     return VolumeList, opt
 
@@ -104,10 +103,10 @@ def SaveNii(reference,volume,out_path,overwrite=False):
     nib.save(newnii,out_path)
 
 def SaveVolume(path,output,opt,pad=(0,0)):
-    Mask=output[0].detach().cpu().numpy()
+    Mask=output[0]#.detach().cpu().numpy()
     S=Mask.shape
     Mask=Mask.reshape((S[-3],S[-2],S[-1]))
-    Labels=output[1].detach().cpu().numpy()
+    Labels=output[1]#.detach().cpu().numpy()
     out=os.path.splitext(path)[0]
     
     if not opt['--probmap']:
@@ -128,7 +127,12 @@ def SaveVolume(path,output,opt,pad=(0,0)):
         if (not opt['--probmap']) and (labs[i]!=labs[-1]): vol=vol*Mask
         SaveNii(path,vol,out+'_'+labs[i]+'.nii.gz',opt['--overwrite'])
             
-        
+def PaddingIsValid(pad,path):
+    if np.any(np.array(pad)<0):
+        warnings.warn('Something went wrong with the boxing of this volume, skipping '+path)
+        return False
+    else:
+        return True
 
 class Normalizer():
     
@@ -176,7 +180,7 @@ def XYBox(Mask,offset=1):
     return LowX, HighX, LowY, HighY
         
 class SegmentUs(Dataset):
-    def __init__(self, VolumeList,boxtemplates=None,transform=None):
+    def __init__(self, VolumeList,opt,boxtemplates=None,transform=None):
         """
         Turns the volume list in a torch dataset to infer through
         Just give it the volume list
@@ -188,9 +192,9 @@ class SegmentUs(Dataset):
         for vol in VolumeList:
             if not os.path.isfile(vol):
                 raise NameError (vol+' file does not exist')
-            
-            self.dataset.append(nib.load(vol))
-            self.paths.append(  os.path.realpath(vol)  )
+            if opt['--namemask'] in vol and opt['--nameignore'] not in vol:
+                self.dataset.append(nib.load(vol))
+                self.paths.append(  os.path.realpath(vol)  )
             
         
     def __getitem__(self,idx):
@@ -209,6 +213,7 @@ class SegmentUs(Dataset):
             
             sample['MRI']= sample['MRI'][:,LowX:HighX,LowY:HighY,:]
             offsets=((int(LowX), int(S[0]-HighX)),(int(LowY), int(S[1]-HighY)),(0,0))  #(0,0, int(LowY), int(S[1]-HighY), int(LowX), int(S[0]-HighX)) # (0,0, int(S[1]-HighY), int(LowY), int(S[0]-HighX), int(LowX))
+            
         # Transform
         
         if self.transform:
@@ -222,3 +227,130 @@ class SegmentUs(Dataset):
     def __len__(self):
         return len(self.dataset)
     
+    def remove(self,path):
+        for x in range(len(self.paths)):
+            if self.paths[x] == path: break
+        del self.dataset[x]
+        del self.paths[x]
+    
+def Segment(VolumeList,opt=None):
+    if opt==None: opt=GetFilesOptions()[1]
+    #Transforms for PyTorch tensors
+    normalizator = Normalizer()
+    tensorize = ToTensor(opt)
+    transforms = torchvision.transforms.Compose([ normalizator, tensorize])
+    #Datasets for approximate mask inference
+    SegmentList=SegmentUs(VolumeList,opt,transform=transforms)
+    SegmentLoader = torch.utils.data.DataLoader(SegmentList, batch_size=1, shuffle=False)
+    segmentations={}
+    boxtemplates=[]
+    masks={}
+    pads=[]
+    toremove=[]
+    #This will modify paths based on using N3 bias corrected volumes or not
+    if opt['--N3']:
+        N3='_N3'
+    else:
+        N3=''
+    #Choose device
+    if opt['--useGPU']:
+        
+        stateloader = lambda savepath : torch.load(savepath)
+    else:
+        stateloader = lambda savepath : torch.load(savepath,map_location='cpu')
+        
+    # Build bounding boxes with auxiliary network, using all masky networks
+    if opt['--boundingbox']:
+        print('Building bounding boxes\n')
+        for f in range(5):
+            with torch.no_grad():
+                if opt['--useGPU']: 
+                    premask=MUNet.SkullNet(MUNet.PARAMS_SKULLNET).cuda().eval()
+                else:
+                    premask=MUNet.SkullNet(MUNet.PARAMS_SKULLNET).cpu().eval()
+                
+                path='AuxW'+N3+'/Fold'+str(f+1)+N3+'/bestbyloss.tar'
+                PMsave=stateloader(path)
+                premask.load_state_dict(PMsave['model_state_dict'])
+                for i, sample in tqdm.tqdm(enumerate(SegmentLoader),total=len(SegmentLoader)):
+                    
+                    masks[i,f]=premask(sample['MRI']).detach().cpu().numpy()
+                
+                torch.cuda.empty_cache()
+                del premask
+                torch.cuda.empty_cache()
+        
+        for i in range(len(SegmentList)):
+            tempo=masks[i,0]+masks[i,1]+masks[i,2]+masks[i,3]+masks[i,4]
+            tempo=tempo/5
+            tempo=tempo.reshape((tempo.shape[-3],tempo.shape[-2],tempo.shape[-1]))
+            tempo[tempo>=0.5]=1
+            tempo[tempo!=1]=0
+#            plt.imshow(tempo[:,:,10])
+#            plt.show()
+            if np.sum(tempo)==0: # look for invalid masks
+                warnings.warn('Sample ignored: could not find brain volume for sample '+SegmentList[i]['path'],Warning)
+                toremove.append(SegmentList[i]['path'])
+            else:
+                boxtemplates.append(LargestComponent(np.copy(tempo)))
+    else:
+        boxtemplates=None
+    del masks
+    
+    # remove invalid subjects
+    for x in toremove:
+        SegmentList.remove(x)
+    
+    VolumeList=SegmentList.paths
+    
+    print('Segmenting...')
+    #final dataloader
+    SegmentList=SegmentUs(VolumeList,opt,boxtemplates=boxtemplates,transform=transforms)
+    SegmentLoader = torch.utils.data.DataLoader(SegmentList, batch_size=1, shuffle=False)
+    
+    #Inference
+    for f in range(5):
+        
+        if opt['--useGPU']: 
+            Net=MUNet.MUnet(MUNet.PARAMS_2D_NoSkip).cuda().eval()
+        else:
+            Net=MUNet.MUnet(MUNet.PARAMS_2D_NoSkip).cpu().eval()
+            
+        
+        path='weights'+N3+'/Fold'+str(f+1)+N3+'/bestbyloss.tar'
+        save=stateloader(path)
+        Net.load_state_dict(save['model_state_dict'])
+        if opt['--multinet']:
+            print('Network '+str(f+1)+'\n')
+        
+        for i, sample in tqdm.tqdm(enumerate(SegmentLoader),total=len(SegmentLoader)):
+            with torch.no_grad():
+                paddy=tuple(sample['offsets'][0].detach().cpu().numpy().astype(int))
+                spath=sample['path'][0]
+#                if not PaddingIsValid(paddy,spath): 
+#                    segmentations[f,i]=(spath,(torch.zeros(1),torch.zeros(1)))
+#                    pads.append((0,0))
+#                else:
+                result=list(Net(sample['MRI']))
+                result[0]=result[0].detach().cpu().numpy()
+                result[1]=result[1].detach().cpu().numpy()
+                pads.append(paddy)
+                if opt['--multinet']:
+                    segmentations[f,i]=(spath,result)
+                else:
+                     
+                    SaveVolume(spath,result,opt,pad=pads[i]) 
+        
+        torch.cuda.empty_cache()
+        del Net
+        torch.cuda.empty_cache()
+        
+        if not opt['--multinet']: break
+    
+    if opt['--multinet']:
+        for i in range(len(SegmentLoader)):
+            mask=segmentations[0,i][1][0]+segmentations[1,i][1][0]+segmentations[2,i][1][0]+segmentations[3,i][1][0]+segmentations[4,i][1][0]
+            mask/=5
+            labels=segmentations[0,i][1][1]+segmentations[1,i][1][1]+segmentations[2,i][1][1]+segmentations[3,i][1][1]+segmentations[4,i][1][1]
+            labels=labels/5
+            SaveVolume(segmentations[0,i][0],(mask,labels),opt,pad=pads[i])

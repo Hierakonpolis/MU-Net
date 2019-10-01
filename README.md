@@ -64,6 +64,10 @@ Options:
 
 --useGPU [True/False]: run on GPU, requires a CUDA enabled GPU and PyTorch installed with GPU support (default True)
 
+--namemask: only include files containing this string (case sensitive). Example: --namemask MySeq.nii
+
+--nameignore: exclude all files containing this string (case sensitive). Example: --nameignore NotThisSeq.nii
+
 Mask volumes are generated in the same folder as the segmented files.
 
 Example: 
