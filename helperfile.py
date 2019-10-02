@@ -117,13 +117,17 @@ def SaveVolume(path,output,opt,pad=(0,0)):
         
         Labels[np.where(Labels == np.amax(Labels,axis=1))] = 1
         Labels[Labels!=1]=0
-        Labels=Labels*Mask
-    
+        #Labels=Labels*Mask
+    UNPM=Mask
     Mask=np.pad(Mask,pad)
     SaveNii(path,Mask,out+'_Mask.nii.gz',opt['--overwrite'])
     for i in range(5):
+        if i==4:
+            mul=1
+        else:
+            mul=UNPM
         vol=np.zeros(Mask.shape)
-        vol+=np.pad(FillHoles(Labels[0,i,:,:,:]),pad,'constant', constant_values=(padwith[i]))
+        vol+=np.pad(FillHoles(Labels[0,i,:,:,:]*mul),pad,'constant', constant_values=(padwith[i]))
         if (not opt['--probmap']) and (labs[i]!=labs[-1]): vol=vol*Mask
         SaveNii(path,vol,out+'_'+labs[i]+'.nii.gz',opt['--overwrite'])
             
