@@ -20,7 +20,7 @@ DEFopt={'--overwrite':'False',
         '--boundingbox':'True',
         '--useGPU':'True',
         '--namemask':'',
-        '--nameignore':''}
+        '--nameignore':'DEFAULT///IGNORE///STRING'}
 
 labs=('Cortex','Hippocampus','Ventricles','Striatum','Background')
 
