@@ -25,14 +25,14 @@ if len(sys.argv)==1: # Helper message
           '--nameignore: exclude all files containing this string (case sensitive). Example: --nameignore NotThisSeq.nii\n',
           'Note: we assume the first two indices in the volume are contained in the same coronal section, so that the third index would refer to different coronal sections')
     exit()
-import helperfile
+import funcs
 
-torch=helperfile.torch
+torch=funcs.torch
 
 #Extract options and MRI volumes list
-VolumeList, opt = helperfile.GetFilesOptions(sys.argv[1:])
+VolumeList, opt = funcs.GetFilesOptions(sys.argv[1:])
 
 
 
 
-helperfile.Segment(VolumeList,opt)
+funcs.Segment(VolumeList,opt)
