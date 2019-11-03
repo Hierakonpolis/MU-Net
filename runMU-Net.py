@@ -23,6 +23,7 @@ if len(sys.argv)==1: # Helper message
           '--useGPU [True/False]: run on GPU, requires installed GPU support for pytorch with a CUDA enabled GPU (default True)\n'+
           '--namemask: only include files containing this string (case sensitive). Example: --namemask MySeq.nii\n'+
           '--nameignore: exclude all files containing this string (case sensitive). Example: --nameignore NotThisSeq.nii\n',
+          '--out: output name, added to each output file\n',
           'Note: we assume the first two indices in the volume are contained in the same coronal section, so that the third index would refer to different coronal sections')
     exit()
 import funcs
