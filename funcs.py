@@ -205,7 +205,7 @@ class SegmentUs(Dataset):
     def __getitem__(self,idx):
         S=self.dataset[idx].shape
         # MRI data
-        MRI=self.dataset[idx].get_data()
+        MRI=self.dataset[idx].get_fdata()
         MRI=MRI.reshape([1, S[0], S[1], S[2]])
         
         
