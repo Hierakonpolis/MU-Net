@@ -12,17 +12,18 @@ if len(sys.argv)==1: # Helper message
           'This network is optimized to run on 2D coronal slices.\nHow to run:\n\n'+
           'python3 runMU-Net.py [options] [list of volumes]\n\n'+
           '[list of volumes] is a list of paths to nifti volumes separated by spaces\n'+
-          'If a folder path is specified, all .nii and .ni.gz files will be added recursvely\n'+
+          'If a folder path is specified, all .nii and .nii.gz files will be added recursvely\n'+
           'Options:'+
           '\n--overwrite [True/False]:\n'+
           '    Overwrite outputs if file already exists (default: False)\n'+
           '--N3 [True/False]:\n    Load model weights for N3 corrected volumes (default False)\n'+
-          '--multinet [True/False]: use networks trained on all folds and apply majority voting. (default True)\n'+
-          '--netid [0]: if using one single network, which one (between 0 and 4)\n'+
-          '--probmap [True/False]: output unthresholded probability maps rather than the segmented volumes (default False)\n'+
-          '--boundingbox [True/False]: automatically estimate bounding box using auxiliary network (default True)\n'+
-          '--useGPU [True/False]: run on GPU, requires installed GPU support for pytorch with a CUDA enabled GPU (default True)\n'+
-          '--namemask: only include files containing this string (case sensitive). Example: --namemask MySeq.nii\n'+
+          '--multinet [True/False]:\n use networks trained on all folds and apply majority voting. (default True)\n'+
+          '--netid:\n if using one single network, which one (between 0 and 4, default 0)\n'+
+          '--probmap [True/False]:\n output unthresholded probability maps rather than the segmented volumes (default False)\n'+
+          '--boundingbox [True/False]:\n automatically estimate bounding box using auxiliary network (default True)\n'+
+          '--useGPU [True/False]:\n run on GPU, requires installed GPU support for pytorch with a CUDA enabled GPU (default True)\n'+
+          '--namemask:\n only include files containing this string (case sensitive). Example: --namemask MySeq.nii\n'+
+          '--depth:\n max directory depth for recursive search (default 99)\n'+
           '--nameignore: exclude all files containing this string (case sensitive). Example: --nameignore NotThisSeq.nii\n',
           '--out: output name, added to each output file\n',
           'Note: we assume the first two indices in the volume are contained in the same coronal section, so that the third index would refer to different coronal sections')

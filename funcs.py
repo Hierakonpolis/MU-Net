@@ -20,6 +20,7 @@ DEFopt={'--overwrite':'False',
         '--probmap':'False',
         '--boundingbox':'True',
         '--useGPU':'True',
+        '--depth':'99',
         '--namemask':'',
         '--out':'',
         '--nameignore':'DEFAULT///IGNORE///STRING'}
@@ -63,9 +64,12 @@ def GetFilesOptions(args=[],opt=DEFopt):
         if os.path.isfile(k):
             VolumeList.append(k)
         elif os.path.isdir(k):
+            depth=k.count('/')
             for subdir, _, files in os.walk(k):
                 for file in files:
                     if file.endswith('nii') or file.endswith('nii.gz'):
+                        fdepth=os.path.join(subdir,file).count('/')
+                        if fdepth-depth > opt['--depth']: continue
                         VolumeList.append(os.path.join(subdir,file))
         else:
             raise NameError('File or directory '+k+' not found')
