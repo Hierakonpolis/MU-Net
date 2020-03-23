@@ -69,7 +69,7 @@ def GetFilesOptions(args=[],opt=DEFopt):
                 for file in files:
                     if file.endswith('nii') or file.endswith('nii.gz'):
                         fdepth=os.path.join(subdir,file).count('/')
-                        if fdepth-depth > opt['--depth']: continue
+                        if fdepth-depth > int(opt['--depth']): continue
                         VolumeList.append(os.path.join(subdir,file))
         else:
             raise NameError('File or directory '+k+' not found')
