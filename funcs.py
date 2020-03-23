@@ -272,7 +272,7 @@ def Segment(VolumeList,opt=None):
     # Build bounding boxes with auxiliary network, using all masky networks
     if opt['--boundingbox']:
         with tqdm.tqdm(total= len(SegmentLoader),desc='Building bounding boxes',
-                       bar_format = "{desc}: {percentage:.1f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}") as pbar:
+                       bar_format = "{desc}: {percentage:.1f}%|{bar}| {n_fmt:.1f}%/{total_fmt} [{elapsed}<{remaining}") as pbar:
             #print('Building bounding boxes\n')
             for f in range(5):
                 with torch.no_grad():
