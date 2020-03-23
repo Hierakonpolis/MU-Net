@@ -16,6 +16,7 @@ from skimage.measure import label as SkLabel
 DEFopt={'--overwrite':'False',
         '--N3':'False',
         '--multinet':'True',
+        '--netid':'1',
         '--probmap':'False',
         '--boundingbox':'True',
         '--useGPU':'True',
@@ -319,6 +320,7 @@ def Segment(VolumeList,opt=None):
     
     #Inference
     for f in range(5):
+        if not opt['--multinet']: f = int(opt['--netid']) 
         
         if opt['--useGPU']: 
             Net=MUNet.MUnet(MUNet.PARAMS_2D_NoSkip).cuda().eval()
