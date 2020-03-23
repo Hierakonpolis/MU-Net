@@ -18,6 +18,7 @@ if len(sys.argv)==1: # Helper message
           '    Overwrite outputs if file already exists (default: False)\n'+
           '--N3 [True/False]:\n    Load model weights for N3 corrected volumes (default False)\n'+
           '--multinet [True/False]: use networks trained on all folds and apply majority voting. (default True)\n'+
+          '--netid [0]: if using one single network, which one (between 0 and 4)\n'+
           '--probmap [True/False]: output unthresholded probability maps rather than the segmented volumes (default False)\n'+
           '--boundingbox [True/False]: automatically estimate bounding box using auxiliary network (default True)\n'+
           '--useGPU [True/False]: run on GPU, requires installed GPU support for pytorch with a CUDA enabled GPU (default True)\n'+

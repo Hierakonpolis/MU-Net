@@ -16,7 +16,7 @@ from skimage.measure import label as SkLabel
 DEFopt={'--overwrite':'False',
         '--N3':'False',
         '--multinet':'True',
-        '--netid':'1',
+        '--netid':'0',
         '--probmap':'False',
         '--boundingbox':'True',
         '--useGPU':'True',
