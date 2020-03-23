@@ -271,7 +271,7 @@ def Segment(VolumeList,opt=None):
         
     # Build bounding boxes with auxiliary network, using all masky networks
     if opt['--boundingbox']:
-        with tqdm.tqdm(total= len(SegmentLoader)*5+1,desc='Building bounding boxes') as pbar:
+        with tqdm.tqdm(total= len(SegmentLoader)+1,desc='Building bounding boxes') as pbar:
             #print('Building bounding boxes\n')
             for f in range(5):
                 with torch.no_grad():
@@ -286,7 +286,7 @@ def Segment(VolumeList,opt=None):
                     for i, sample in enumerate(SegmentLoader):
                         
                         masks[i,f]=premask(sample['MRI']).detach().cpu().numpy()
-                        pbar.update(1)
+                        pbar.update(1/5)
                     
                     torch.cuda.empty_cache()
                     del premask
