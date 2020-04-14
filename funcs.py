@@ -305,7 +305,8 @@ def Segment(VolumeList,opt=None):
     #            plt.imshow(tempo[:,:,10])
     #            plt.show()
                 if np.sum(tempo)==0: # look for invalid masks
-                    warnings.warn('Sample ignored: could not find brain volume for sample '+SegmentList[i]['path'],Warning)
+                    warn='Sample ignored: failed to build bounding box for volume '+SegmentList[i]['path']
+                    warnings.warn(warn,Warning)
                     toremove.append(SegmentList[i]['path'])
                 else:
                     boxtemplates.append(LargestComponent(np.copy(tempo)))
