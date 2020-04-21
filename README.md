@@ -1,5 +1,5 @@
 # MU-Net
-Multi-task U-Net for the simultaneous segmentation and skull-stripping of mouse brain MRI
+[Multi-task U-Net for the simultaneous segmentation and skull-stripping of mouse brain MRI](https://www.biorxiv.org/content/10.1101/2020.02.25.964015v1)
 ![sample image](sample.png)
 This convolutional neural network is designed to perform skull-stripping and region segmentation on mouse brain MRI. Files included:
 
