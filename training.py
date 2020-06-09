@@ -119,7 +119,7 @@ while CurrentFold <= folds:
             
             dice.append(H.DiceScores(sample['labels'],Labels))
             
-        print('Training set running mean dices: ')
+        print('Training set mean dices: ')
         print(np.mean(dice))
         
         epoch+=1
