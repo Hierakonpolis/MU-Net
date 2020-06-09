@@ -105,7 +105,6 @@ while CurrentFold <= folds:
     
     while TotalTime < maxtime and (step - BestStep < 3000):
         dice=[]
-        epoch+=1
         print('Epoch '+str(epoch))
         
         for i, sample in enumerate(dataloader):
@@ -113,7 +112,7 @@ while CurrentFold <= folds:
             torch.cuda.empty_cache()
             optimizer.zero_grad()
             
-            Labels = UN(sample['MRI'],True)
+            Labels = UN(sample['MRI'])
             loss = Lossf(sample['labels'],Labels)
             loss.backward()
             optimizer.step()
@@ -134,7 +133,7 @@ while CurrentFold <= folds:
         for i, sample in enumerate(testloader):
             with torch.no_grad():
                 torch.cuda.empty_cache()
-                result=UN(sample['MRI'],True)
+                result=UN(sample['MRI'])
                 dices.append(H.DiceScores(sample['labels'],result))
                 losses.append( float(Lossf(sample['labels'],result)))
                 specify='_'+sample['timepoint'][0]+'_'+sample['rodent_numer'][0]

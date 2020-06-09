@@ -552,3 +552,20 @@ class Rescale():
         if np.random.rand()<self.probability:
             MRI=zoom(MRI,scaleFactor,order=3)
             labels=zoom(labels,scaleFactor,order=0)
+        return {'MRI': MRI, 'labels': labels}
+
+def DiceScores(Ytrue,Ypred,sumdim=(0,2,3,4)):
+    Mask=Ypred[0].detach().cpu().numpy()
+    Mask[Mask>=0.5]=1
+    Mask[Mask!=1]=0
+    labels=Ypred[1].detach().cpu().numpy()
+    labels [np.where(labels== np.amax(labels,axis=1,keepdims=True))] = 1
+    labels[labels!=1]=0
+    Ypred=np.concatenate((Mask,labels),axis=1)
+    Ytrue=Ytrue.cpu().numpy()
+    
+    
+    dice=2*np.sum(Ytrue*Ypred,sumdim)/np.sum(Ytrue+Ypred,sumdim)
+    if sumdim[0]!=0:
+        dice=np.nanmean(dice,axis=0)
+    return dice
