@@ -372,3 +372,183 @@ def Segment(VolumeList,opt=None):
             labels=segmentations[0,i][1][1]+segmentations[1,i][1][1]+segmentations[2,i][1][1]+segmentations[3,i][1][1]+segmentations[4,i][1][1]
             labels=labels/5
             SaveVolume(segmentations[0,i][0],(mask,labels),opt,name=opt['--out'],pad=pads[i])
+            
+ages=('5weeks_baseline','12weeks','16weeks','8mo')
+volumenames=('2dseq.nii','scan_brainmask.nii','scan_ctx.nii','2dseq_mask.nii.gz','scan_lv.nii','scan_str.nii')
+folds={1:(56,  90,  70,  60,  25, 102),
+       2:(51,  20,  81,   4,  31, 113,  33),
+       3:(43,  62,  40,   6,  77,  18,  14),
+       4:(64,  76,  66,  32,  61,  34),
+       5:(8,   11,  74,  84,  28, 116)}
+
+def FetchSet(dirs, fold=0, FoldType='Train', Age=None):
+    """ Create nibabel objects
+    Args:
+        dirs: path of folder containing all datasets
+    
+    Rois are organized as: 
+        0 Mask
+        1 Cortex
+        2 Hippocampus
+        3 Ventricles
+        4 Striatum
+        5 No Class
+        
+        Indexed as ROIs[subj,roi]
+    Age: number in 0-3 representing:
+    ages=('5weeks_baseline','12weeks','16weeks','8mo')
+    """
+    
+    dataset={}
+    ROIs={}
+    paths={}
+    timepoints={}
+    rodentnumber={}
+    i=0
+    for SubSet in os.scandir(dirs):
+        if os.path.isdir(SubSet):
+            for subj in os.scandir(SubSet):
+                if (FoldType=='Train' and (int(subj.name) in folds[fold])) or (FoldType=='Test' and (not (int(subj.name) in folds[fold]))):
+                    continue
+                if os.path.isdir(subj):
+                    if Age!=None:
+                        if ages[Age]!= SubSet.name :
+                            continue
+                    paths[i]=subj.path
+                    timepoints[i]=SubSet.name
+                    rodentnumber[i]=subj.name
+                    dataset[i]=nib.load(subj.path+'/'+volumenames[0])
+                    ROIs[i,0]=nib.load(subj.path+'/'+volumenames[1])
+                    ROIs[i,1]=nib.load(subj.path+'/'+volumenames[2])
+                    
+                    
+                    ROIs[i,2]=nib.load(subj.path+'/'+volumenames[3])
+                    
+                    
+                    ROIs[i,3]=nib.load(subj.path+'/'+volumenames[4])
+                    ROIs[i,4]=nib.load(subj.path+'/'+volumenames[5])
+                    i+=1
+    return (dataset,ROIs,paths,timepoints,rodentnumber)
+
+
+class RodentDatasetCR(Dataset):
+    def __init__(self, dirs, fold=0, transform=None,
+                 FoldType='Train', Age=None):
+        """ Create nibabel objects and define the transformation object
+        Args:
+            dirs: path of folder containing all datasets
+        
+        Rois are organized as: 
+            0 Mask
+            1 Cortex
+            2 Hippocampus
+            3 Ventricles
+            4 Striatum
+            5 No Class
+            
+            Indexed as ROIs[subj,roi]
+            
+    Age: number in 0-3 representing:
+    ages=('5weeks_baseline','12weeks','16weeks','8mo')
+            """
+        
+        self.transform=transform
+        (self.dataset,self.ROIs,self.paths,self.timepoints,self.rodentnumber) = FetchSet(dirs, fold, FoldType, Age)
+            
+        
+    def __getitem__(self,idx):
+        S=self.dataset[idx].shape
+        # MRI data
+        MRI=self.dataset[idx].get_data()
+        MRI=MRI.reshape([1, S[0], S[1], S[2]])
+        
+        # Bounding Box
+        
+        # Labels
+        Labels=np.zeros((6,S[0],S[1],S[2]))
+        for i in range(1,5):
+            Labels[i,:,:,:]=self.ROIs[idx,i].get_data()
+        
+        NoCate=np.sum(Labels,axis=0)
+        NoCate[NoCate==0]=3
+        NoCate[NoCate!=3]=0
+        NoCate[NoCate==3]=1
+        Labels[0,:,:,:]=LargestComponent(self.ROIs[idx,0].get_data())
+        
+        Labels[5,:,:,:]=NoCate.reshape((1, S[0], S[1], S[2]))
+        
+        sample = {'MRI': MRI, 'labels': Labels}
+        
+        # Crop
+        
+        LowX, HighX, LowY, HighY = XYBox(sample['labels'][0,:,:,:])
+        HighX, HighY = HighX + 1, HighY + 1
+        
+        sample = {'MRI': sample['MRI'][:,LowX:HighX,LowY:HighY,:], 'labels': sample['labels'][:,LowX:HighX,LowY:HighY,:]}
+        
+        # Transform
+        
+        if self.transform:
+            sample = self.transform(sample)
+        
+        sample['path']=self.paths[idx]
+        sample['timepoint']= self.timepoints[idx]
+        sample['rodent_numer']=self.rodentnumber[idx]
+        return sample
+        
+    def __len__(self):
+        return len(self.dataset)
+    
+from scipy.ndimage import rotate
+from scipy.ndimage.interpolation import zoom
+
+class RotCoronal():
+    '''
+    Randomly rotates of an angle in [-MaxAngle, MaxAngle]
+    with probability=probability
+    else, the data is left unchanged
+    always rotates on the x,y plane, z is bad
+    '''
+    def __init__(self,MaxAngle,probability):
+
+        self.MaxAngle=MaxAngle
+        self.probability=probability
+        
+    def __call__(self,sample):
+        MRI, labels= sample['MRI'], sample['labels']
+        if float(np.random.random(1))<= self.probability:
+            
+            Ang=float(np.random.uniform(-self.MaxAngle,self.MaxAngle))
+            
+            RotMe = lambda samp,spline: rotate(samp,Ang,(1,2),reshape=False,order=spline)
+            MRI=RotMe(MRI,3)
+            
+            
+            labels=RotMe(labels,0)
+                
+        return {'MRI': MRI, 'labels': labels}
+
+    
+class Rescale():
+    """Rescale the image in a sample to a given size.
+
+    Args:
+        output_size (tuple or int): Desired output size. If tuple, output is
+            matched to output_size. If int, smaller of image edges is matched
+            to output_size keeping aspect ratio the same.
+    """
+
+    def __init__(self, MaxScale,MinScale,probability):
+        
+        self.MinScale = MinScale
+        self.span = MaxScale-MinScale
+        self.probability=probability
+
+    def __call__(self, sample):
+        
+        scaleFactor=self.MinScale + self.span * np.random.rand()
+        scaleFactor=(1,scaleFactor,scaleFactor,1)
+        MRI, labels = sample['MRI'], sample['labels']
+        if np.random.rand()<self.probability:
+            MRI=zoom(MRI,scaleFactor,order=3)
+            labels=zoom(labels,scaleFactor,order=0)
