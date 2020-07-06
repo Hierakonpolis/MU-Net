@@ -1,7 +1,9 @@
 # MU-Net
 **[Multi-task U-Net for the simultaneous segmentation and skull-stripping of mouse brain MRI](https://www.biorxiv.org/content/10.1101/2020.02.25.964015v1)**
 ![sample image](sample.png)
-This convolutional neural network is designed to perform skull-stripping and region segmentation on mouse brain MRI. Files included:
+This convolutional neural network is designed to perform skull-stripping and region segmentation on mouse brain MRI. A jupyter notebook going over the deails of this project and the training procedure is available [here](https://github.com/Hierakonpolis/NN4Kubiac). 
+
+Files included:
 
 MUNet.py: network definitions
 
