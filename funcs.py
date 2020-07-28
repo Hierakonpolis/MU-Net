@@ -64,11 +64,11 @@ def GetFilesOptions(args=[],opt=DEFopt):
         if os.path.isfile(k):
             VolumeList.append(k)
         elif os.path.isdir(k):
-            depth=k.count('/')
+            depth=k.count(os.path.sep)
             for subdir, _, files in os.walk(k):
                 for file in files:
                     if file.endswith('nii') or file.endswith('nii.gz'):
-                        fdepth=os.path.join(subdir,file).count('/')
+                        fdepth=os.path.join(subdir,file).count(os.path.sep)
                         if fdepth-depth > int(opt['--depth']): continue
                         VolumeList.append(os.path.join(subdir,file))
         else:
@@ -281,7 +281,7 @@ def Segment(VolumeList,opt=None):
                     else:
                         premask=MUNet.SkullNet(MUNet.PARAMS_SKULLNET).cpu().eval()
                     
-                    path='AuxW'+N3+'/Fold'+str(f+1)+N3+'/bestbyloss.tar'
+                    path=os.path.join('AuxW'+N3,'Fold'+str(f+1)+N3,'bestbyloss.tar')
                     PMsave=stateloader(path)
                     premask.load_state_dict(PMsave['model_state_dict'])
                     for i, sample in enumerate(SegmentLoader):
@@ -335,7 +335,7 @@ def Segment(VolumeList,opt=None):
             Net=MUNet.MUnet(MUNet.PARAMS_2D_NoSkip).cpu().eval()
             
         
-        path='weights'+N3+'/Fold'+str(f+1)+N3+'/bestbyloss.tar'
+        path=os.path.join('weights'+N3,'Fold'+str(f+1)+N3,'bestbyloss.tar')
         save=stateloader(path)
         Net.load_state_dict(save['model_state_dict'])
         if opt['--multinet']:
@@ -417,16 +417,16 @@ def FetchSet(dirs, fold=0, FoldType='Train', Age=None):
                     paths[i]=subj.path
                     timepoints[i]=SubSet.name
                     rodentnumber[i]=subj.name
-                    dataset[i]=nib.load(subj.path+'/'+volumenames[0])
-                    ROIs[i,0]=nib.load(subj.path+'/'+volumenames[1])
-                    ROIs[i,1]=nib.load(subj.path+'/'+volumenames[2])
+                    dataset[i]=nib.load(os.path.join(subj.path,volumenames[0]))
+                    ROIs[i,0]=nib.load(os.path.join(subj.path,volumenames[1]))
+                    ROIs[i,1]=nib.load(os.path.join(subj.path,volumenames[2]))
                     
                     
-                    ROIs[i,2]=nib.load(subj.path+'/'+volumenames[3])
+                    ROIs[i,2]=nib.load(os.path.join(subj.path,volumenames[3]))
                     
                     
-                    ROIs[i,3]=nib.load(subj.path+'/'+volumenames[4])
-                    ROIs[i,4]=nib.load(subj.path+'/'+volumenames[5])
+                    ROIs[i,3]=nib.load(os.path.join(subj.path,volumenames[4]))
+                    ROIs[i,4]=nib.load(os.path.join(subj.path,volumenames[5]))
                     i+=1
     return (dataset,ROIs,paths,timepoints,rodentnumber)
 
