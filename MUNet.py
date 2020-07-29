@@ -101,8 +101,6 @@ PARAMS=PARAMS_2D_NoSkip
             
 EPS=1e-10 # log offset to avoid log(0)
 
-torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
-torch.backends.cudnn.benchmark = True
 #Fix parameters
     
 def FindPad(FilterSize):

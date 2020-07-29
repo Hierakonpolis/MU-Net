@@ -245,6 +245,14 @@ class SegmentUs(Dataset):
     
 def Segment(VolumeList,opt=None):
     if opt==None: opt=GetFilesOptions()[1]
+    if opt['--useGPU']:
+        torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
+        torch.backends.cudnn.benchmark = True
+        device='cuda'
+    else:
+        device='cpu'
+        torch.set_default_tensor_type('torch.FloatTensor')
+        
     #Transforms for PyTorch tensors
     normalizator = Normalizer()
     tensorize = ToTensor(opt)
@@ -263,11 +271,8 @@ def Segment(VolumeList,opt=None):
     else:
         N3=''
     #Choose device
-    if opt['--useGPU']:
-        
-        stateloader = lambda savepath : torch.load(savepath)
-    else:
-        stateloader = lambda savepath : torch.load(savepath,map_location='cpu')
+    
+    stateloader = lambda savepath : torch.load(savepath,map_location=device)
         
     # Build bounding boxes with auxiliary network, using all masky networks
     if opt['--boundingbox']:
@@ -276,10 +281,7 @@ def Segment(VolumeList,opt=None):
             #print('Building bounding boxes\n')
             for f in range(5):
                 with torch.no_grad():
-                    if opt['--useGPU']: 
-                        premask=MUNet.SkullNet(MUNet.PARAMS_SKULLNET).cuda().eval()
-                    else:
-                        premask=MUNet.SkullNet(MUNet.PARAMS_SKULLNET).cpu().eval()
+                    premask=MUNet.SkullNet(MUNet.PARAMS_SKULLNET).eval().to(device)
                     
                     path=os.path.join('AuxW'+N3,'Fold'+str(f+1)+N3,'bestbyloss.tar')
                     PMsave=stateloader(path)
@@ -329,10 +331,7 @@ def Segment(VolumeList,opt=None):
     for f in range(5):
         if not opt['--multinet']: f = int(opt['--netid']) 
         
-        if opt['--useGPU']: 
-            Net=MUNet.MUnet(MUNet.PARAMS_2D_NoSkip).cuda().eval()
-        else:
-            Net=MUNet.MUnet(MUNet.PARAMS_2D_NoSkip).cpu().eval()
+        Net=MUNet.MUnet(MUNet.PARAMS_2D_NoSkip).eval().to(device)
             
         
         path=os.path.join('weights'+N3,'Fold'+str(f+1)+N3,'bestbyloss.tar')
