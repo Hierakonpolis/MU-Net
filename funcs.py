@@ -79,6 +79,10 @@ def GetFilesOptions(args=[],opt=DEFopt):
     opt=Booler(opt,'--N3')
     opt=Booler(opt,'--multinet')
     opt=Booler(opt,'--useGPU')
+    if opt['--useGPU']==True:
+        if not torch.cuda.is_available():
+            opt['--useGPU']=False
+            print('CUDA unavailable: setting --useGPU to False')
         
     return VolumeList, opt
 
