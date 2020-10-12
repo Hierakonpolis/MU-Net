@@ -346,7 +346,10 @@ def Segment(VolumeList,opt=None):
         
         for i, sample in tqdm.tqdm(enumerate(SegmentLoader),total=len(SegmentLoader),desc='Segmenting'):
             with torch.no_grad():
-                paddy=tuple(sample['offsets'][0].detach().cpu().numpy().astype(int))
+                if not opt['--boundingbox']:
+                    paddy=(0,0,0,0,0,0)
+                else:
+                    paddy=tuple(sample['offsets'][0].detach().cpu().numpy().astype(int))
                 spath=sample['path'][0]
 #                if not PaddingIsValid(paddy,spath): 
 #                    segmentations[f,i]=(spath,(torch.zeros(1),torch.zeros(1)))
