@@ -23,6 +23,7 @@ DEFopt={'--overwrite':'False',
         '--depth':'99',
         '--namemask':'',
         '--out':'',
+        '--showpaths:':'False',
         '--nameignore':'DEFAULT///IGNORE///STRING'}
 
 labs=('Cortex','Hippocampus','Ventricles','Striatum','Background')
@@ -79,6 +80,7 @@ def GetFilesOptions(args=[],opt=DEFopt):
     opt=Booler(opt,'--N3')
     opt=Booler(opt,'--multinet')
     opt=Booler(opt,'--useGPU')
+    opt=Booler(opt,'--showpaths')
     if opt['--useGPU']==True:
         if not torch.cuda.is_available():
             opt['--useGPU']=False
@@ -256,6 +258,8 @@ def Segment(VolumeList,opt=None):
     else:
         device='cpu'
         torch.set_default_tensor_type('torch.FloatTensor')
+    
+
         
     #Transforms for PyTorch tensors
     normalizator = Normalizer()
@@ -263,6 +267,9 @@ def Segment(VolumeList,opt=None):
     transforms = torchvision.transforms.Compose([ normalizator, tensorize])
     #Datasets for approximate mask inference
     SegmentList=SegmentUs(VolumeList,opt,transform=transforms)
+    if opt['--showpaths']:
+        print(SegmentList.paths)
+        return
     SegmentLoader = torch.utils.data.DataLoader(SegmentList, batch_size=1, shuffle=False)
     segmentations={}
     boxtemplates=[]
