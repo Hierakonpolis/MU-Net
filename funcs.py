@@ -23,7 +23,7 @@ DEFopt={'--overwrite':'False',
         '--depth':'99',
         '--namemask':'',
         '--out':'',
-        '--showpaths:':'False',
+        '--showpaths':'False',
         '--nameignore':'DEFAULT///IGNORE///STRING'}
 
 labs=('Cortex','Hippocampus','Ventricles','Striatum','Background')
